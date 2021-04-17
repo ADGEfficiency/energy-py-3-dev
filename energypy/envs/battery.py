@@ -2,6 +2,7 @@ from collections import namedtuple
 import numpy as np
 
 from energypy import registry
+from energypy.envs.base import AbstractEnv
 
 
 def battery_energy_balance(initial_charge, final_charge, import_energy, export_energy, losses):
@@ -19,31 +20,34 @@ def calculate_losses(delta_charge, efficiency):
     losses = delta_charge * (1 - efficiency)
     losses = np.array(losses)
     losses[delta_charge > 0] = 0
+
+    if (np.isnan(losses)).any():
+        losses = np.zeros_like(losses)
     return np.abs(losses)
 
 
 def set_battery_config(value, n_batteries):
     if isinstance(value, list):
-        return np.array(value).reshape(1, n_batteries, 1)
+        return np.array(value).reshape(n_batteries, 1)
     else:
-        return np.full((n_batteries, 1), value).reshape(1, n_batteries, 1)
+        return np.full((n_batteries, 1), value).reshape(n_batteries, 1)
 
 
 class BatteryObservationSpace:
     def __init__(self, dataset):
-        self.shape = dataset.dataset['features'].shape[1:]
+        self.shape = dataset.dataset['features'].shape[2:]
 
 
 class BatteryActionSpace:
     def __init__(self, n_batteries=2):
         self.n_batteries = n_batteries
-        self.shape = (self.n_batteries, 1)
+        self.shape = (1, )
 
         self.low = -1
         self.high = 1
 
     def sample(self):
-        return np.random.uniform(-1, 1, self.n_batteries).reshape(1, *self.shape)
+        return np.random.uniform(-1, 1, self.n_batteries).reshape(self.n_batteries, 1)
 
     def contains(self, action):
         assert (action <= 1.0).all()
@@ -51,7 +55,7 @@ class BatteryActionSpace:
         return True
 
 
-class Battery:
+class Battery(AbstractEnv):
     """
     data = (n_battery, timesteps, features)
     """
@@ -63,7 +67,8 @@ class Battery:
         efficiency=0.9,
         initial_charge=0.0,
         episode_length=288,
-        dataset={'name': 'random-dataset'}
+        dataset={'name': 'random-dataset'},
+        logger=None
     ):
         self.n_batteries = n_batteries
 
@@ -74,8 +79,14 @@ class Battery:
 
         self.episode_length = int(episode_length)
 
-        dataset['n_batteries'] = n_batteries
-        self.dataset = registry.make(**dataset)
+        if isinstance(dataset, dict):
+            self.dataset = registry.make(
+                **dataset,
+                logger=logger,
+                n_batteries=n_batteries
+            )
+        else:
+            self.dataset = dataset
 
         self.observation_space = BatteryObservationSpace(self.dataset)
         self.action_space = BatteryActionSpace(n_batteries)
@@ -83,7 +94,7 @@ class Battery:
         self.elements = (
             ('observation', self.observation_space.shape, 'float32'),
             ('action', self.action_space.shape, 'float32'),
-            ('reward', (self.n_batteries, ), 'float32'),
+            ('reward', (1, ), 'float32'),
             ('next_observation', self.observation_space.shape, 'float32'),
             ('done', (1, ), 'bool')
         )
@@ -95,12 +106,15 @@ class Battery:
         self.charge = self.initial_charge
 
         self.dataset.reset(mode)
+        self.test_done = self.dataset.test_done
         data = self.dataset.get_data(self.cursor)
-        self.cursor += 1
-        return data['features']
+        return data['features'].reshape(self.n_batteries,  -1)
+
+    def setup_test(self):
+        self.test_done = self.dataset.setup_test()
 
     def step(self, action):
-        action = action.reshape(1, self.n_batteries, 1)
+        action = action.reshape(self.n_batteries, 1)
 
         #  expect a scaled action here
         #  -1 = discharge max, 1 = charge max
@@ -146,13 +160,13 @@ class Battery:
             losses
         )
 
-        price = self.dataset.get_data(self.cursor)['prices'].reshape(1, self.n_batteries,  -1)
-        price = np.array(price).reshape(1, self.n_batteries, 1)
+        price = self.dataset.get_data(self.cursor)['prices'].reshape(self.n_batteries,  -1)
+        price = np.array(price).reshape(self.n_batteries, 1)
         reward = export_energy * price - import_energy * price
 
         self.cursor += 1
-        next_obs = self.dataset.get_data(self.cursor)['features'].reshape(1, self.n_batteries,  -1)
-        done = np.array(self.cursor == (self.episode_length + 1))
+        done = np.array(self.cursor == (self.episode_length))
+        next_obs = self.dataset.get_data(self.cursor)['features'].reshape(self.n_batteries,  -1)
 
         info = {
             'cursor': self.cursor,

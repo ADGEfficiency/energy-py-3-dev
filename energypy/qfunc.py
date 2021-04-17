@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
+from tensorflow.keras.layers import Flatten
 
 from energypy.target import update_target_network
 from energypy.utils import minimum_target
@@ -23,7 +24,7 @@ def make(env, size_scale=1):
     targets = [q1_target, q2_target]
     return onlines, targets
 
-from tensorflow.keras.layers import Flatten
+
 def make_qfunc(obs_shape, n_actions, name, size_scale=1):
     """makes a single qfunc"""
 

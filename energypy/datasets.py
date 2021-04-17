@@ -1,13 +1,64 @@
 from collections import OrderedDict, defaultdict, namedtuple
+import json
 
 from pathlib import Path
 import numpy as np
 import pandas as pd
+import random
 
 
-class RandomDataset:
-    def __init__(self, n=1000, n_features=3, n_batteries=1):
+def make_perfect_forecast(prices, horizon):
+    prices = np.array(prices).reshape(-1, 1)
+    forecast = np.hstack([np.roll(prices, -i) for i in range(0, horizon)])
+    return forecast[:-(horizon-1), :]
+
+
+def load_episodes(path):
+    #  pass in list of filepaths
+    if isinstance(path, list):
+        episodes = path
+        print(f'loaded {len(episodes)} from list')
+        return [pd.read_csv(p, index_col=0) for p in episodes]
+
+    #  pass in directory
+    elif Path(path).is_dir():
+        path = Path(path)
+        episodes = [p for p in path.iterdir() if p.suffix == '.csv']
+    else:
+        path = Path(path)
+        assert path.is_file() and path.suffix == '.csv'
+        episodes = [path, ]
+
+    print(f'loaded {len(episodes)} from {path.name}')
+    return [pd.read_csv(p, index_col=0) for p in episodes]
+
+
+def round_nearest(x, divisor):
+    return x - (x % divisor)
+
+
+class AbstractDataset:
+    def reset(self, mode=None):
+        raise NotImplementedError()
+
+    def setup_test(self):
+        raise NotImplementedError()
+
+    def get_data(self, cursor):
+        return OrderedDict({k: d[cursor] for k, d in self.dataset.items()})
+
+
+class RandomDataset(AbstractDataset):
+    def __init__(self, n=1000, n_features=3, n_batteries=1, logger=None):
         self.dataset = self.make_random_dataset(n, n_features, n_batteries)
+        self.test_done = True
+        self.reset()
+
+    def reset(self, mode=None):
+        pass
+
+    def setup_test(self):
+        pass
 
     def make_random_dataset(self, n, n_features, n_batteries):
         np.random.seed(42)
@@ -16,84 +67,74 @@ class RandomDataset:
         features = np.random.uniform(0, 100, n*n_features*n_batteries).reshape(n, n_batteries, n_features)
         return {'prices': prices, 'features': features}
 
-    def get_data(self, cursor):
-        return OrderedDict({k: d[cursor] for k, d in self.dataset.items()})
 
-    def reset(self, mode=None):
-        pass
+class NEMDataset(AbstractDataset):
+    def __init__(self, n_batteries, train_episodes=None, test_episodes=None, logger=None):
+        self.n_batteries = n_batteries
 
-
-def make_perfect_forecast(prices, horizon):
-    prices = np.array(prices).reshape(-1, 1)
-    forecast = np.hstack([np.roll(prices, -i) for i in range(0, horizon)])
-    #  +1 because we include the current price in the forecast
-    return forecast[:-(horizon-1), :]
-
-
-class NEMDataset:
-    def __init__(
-        self,
-        n_batteries=1,
-        episode_length=128
-    ):
-        assert n_batteries == 1, 'dont support more than one'
-        self.episode_length = episode_length
-
-        self.datasets = {
-            'train': self.make_nem_dataset_one_battery(),
-            'test': self.make_nem_dataset_one_battery()
+        #  TODO - use of the random key here is awkard
+        #  using it to get the random policy sampling to play nice
+        self.episodes = {
+            'train': load_episodes(train_episodes),
+            'random': load_episodes(train_episodes),
+            'test': load_episodes(test_episodes),
         }
 
+        #  want test episodes to be a multiple of the number of batteries
+        lim = round_nearest(len(self.episodes['test'][:]), self.n_batteries)
+        self.episodes['test'] = self.episodes['test'][:lim]
+        assert len(self.episodes['test']) % self.n_batteries == 0
+
+        self.test_done = True
         self.reset()
 
-    def make_nem_dataset_one_battery(self):
-        horizon = 12
+    def reset(self, mode='train'):
+        if mode == 'test':
+            return self.reset_test()
+        else:
+            return self.reset_train()
 
-        prices = [p / 'clean.csv' for p in (Path.home() / 'nem-data' / 'trading-price').iterdir()]
+    def reset_train(self):
+        episodes = random.choices(self.episodes['train'], k=self.n_batteries)
 
-        #  NOT SELECTING REGION
+        ds = defaultdict(list)
+        for episode in episodes:
+            episode = episode.copy()
+            prices = episode.pop('price [$/MWh]')
+            ds['prices'].append(prices.reset_index(drop=True))
+            ds['features'].append(episode.reset_index(drop=True))
 
-        prices = [pd.read_csv(p, index_col='interval-start', parse_dates=True) for p in prices]
-        prices = pd.concat([p[['trading-price', 'REGIONID']] for p in prices], axis=0)
+        #  TODO could call this episode
+        self.dataset = {
+            'prices': pd.concat(ds['prices'], axis=1).values,
+            'features': pd.concat(ds['features'], axis=1).values,
+        }
+        return self.get_data(0)
 
-        region = 'SA1'
-        region_mask = prices['REGIONID'] == region
-        prices = prices.loc[region_mask, :]
-        assert len(set(prices['REGIONID'])) == 1
-        prices = prices.drop('REGIONID', axis=1)
+    def setup_test(self):
+        #  called during main?
+        self.test_done = False
+        self.test_episodes_idx = list(range(0, len(self.episodes['test'])))
+        return self.test_done
 
-        datetime = prices.index.values[:-(horizon-1)]
-        features = make_perfect_forecast(prices['trading-price'], horizon)
-        prices = prices.values[:-(horizon-1), :]
+    def reset_test(self):
+        episodes = self.test_episodes_idx[:self.n_batteries]
+        self.test_episodes_idx = self.test_episodes_idx[self.n_batteries:]
 
-        assert prices.shape[0] == features.shape[0]
-        assert prices.shape[0] == datetime.shape[0]
+        ds = defaultdict(list)
+        for episode in episodes:
+            episode = self.episodes['test'][episode].copy()
+            prices = episode.pop('price [$/MWh]')
+            ds['prices'].append(prices.reset_index(drop=True))
+            ds['features'].append(episode.reset_index(drop=True))
 
-        return {
-            'prices': prices,
-            'features': features,
-            'datetime': datetime
+        #  TODO could call this episode
+        self.dataset = {
+            'prices': pd.concat(ds['prices'], axis=1).values,
+            'features': pd.concat(ds['features'], axis=1).values,
         }
 
-    def get_data(self, cursor):
-        return OrderedDict(
-            {k: d[cursor] for k, d in self.dataset.items()}
-        )
+        if len(self.test_episodes_idx) == 0:
+            self.test_done = True
 
-    def reset(self, mode='train'):
-        self.dataset = self.sample_episode(mode)
-
-    def sample_episode(self, mode):
-        #  mode could also be dataset
-        dataset = self.datasets[mode]
-        pop_len = dataset['prices'].shape[0]
-
-        start = np.random.randint(0, pop_len - self.episode_length, 1)[0]
-        end = start + self.episode_length
-
-        episode = {}
-        for name, data in dataset.items():
-            episode[name] = data[start:end]
-
-        print(f' sampled nem episode')
-        return episode
+        return self.get_data(0)

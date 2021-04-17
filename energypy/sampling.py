@@ -8,32 +8,33 @@ def episode(
     buffer,
     actor,
     hyp,
-    writers,
     counters,
     rewards,
     mode,
     logger=None
 ):
-    obs = env.reset(mode=mode).reshape(1, -1)
+    obs = env.reset(mode=mode)
     done = False
 
     reward_scale = hyp['reward-scale']
     episode_rewards = []
 
     while not done:
-        action, _, deterministic_action = actor(obs)
+        act, _, deterministic_action = actor(obs)
 
         if mode == 'test':
-            action = deterministic_action
+            act = deterministic_action
 
-        next_obs, reward, done, _ = env.step(np.array(action))
-        buffer.append(env.Transition(obs, action, reward/reward_scale, next_obs, done))
-        episode_rewards.append(reward)
+        next_obs, reward, done, _ = env.step(np.array(act))
+        episode_rewards.append(np.mean(reward))
 
-        if logger:
-            logger.debug(
-                f'{obs}, {action}, {reward}, {next_obs}, {done}, {mode}'
-            )
+        for o, a, r, no in zip(obs, act, reward, next_obs):
+            buffer.append(env.Transition(o, a, r/reward_scale, no, done))
+
+        # if logger:
+        #     logger.debug(
+        #         f'{obs}, {act}, {reward}, {next_obs}, {done}, {mode}'
+        #     )
 
         counters['env-steps'] += 1
         obs = next_obs
@@ -60,7 +61,6 @@ def run_episode(
         buffer,
         actor,
         hyp,
-        writers,
         counters,
         rewards,
         mode,
@@ -77,7 +77,7 @@ def run_episode(
         f'{mode}-episodes',
         verbose=True
     )
-    writers[mode].scalar(
+    writers['episodes'].scalar(
         episode_reward,
         'episode-reward',
         'episodes'
@@ -127,8 +127,12 @@ def sample_test(
     logger,
 ):
     mode = 'test'
+
+    env.setup_test()
+
     test_results = []
-    for _ in range(hyp['n-tests']):
+    test_done = False
+    while not test_done:
 
         test_rewards = run_episode(
             env,
@@ -142,6 +146,7 @@ def sample_test(
             logger=logger
         )
         test_results.append(sum(test_rewards))
+        test_done = env.test_done
 
     return test_results
 

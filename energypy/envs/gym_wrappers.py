@@ -2,6 +2,8 @@ from collections import namedtuple
 
 import gym
 
+from energypy.envs.base import AbstractEnv
+
 
 #  key=name, value=id
 env_ids = {
@@ -14,8 +16,8 @@ def inverse_scale(action, low, high):
     return action * (high - low) + low
 
 
-class GymWrapper():
-    def __init__(self, env_name):
+class GymWrapper(AbstractEnv):
+    def __init__(self, env_name, logger=None):
         self.env_id = env_ids[env_name]
         self.env = gym.make(self.env_id)
         self.elements = (
@@ -28,6 +30,9 @@ class GymWrapper():
         self.Transition = namedtuple('Transition', [el[0] for el in self.elements])
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
+
+    def setup_test(self):
+        self.test_done = True
 
     def step(self, action):
         #  expect a scaled action here

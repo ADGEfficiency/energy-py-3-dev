@@ -69,3 +69,6 @@ class Buffer():
         for name, data in self.data.items():
             batch[name] = data[idx, :]
         return batch
+
+    def level(self):
+        return (len(self) / self.size) * 100

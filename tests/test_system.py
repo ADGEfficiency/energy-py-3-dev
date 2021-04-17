@@ -34,7 +34,7 @@ def test_system():
 
 
 batt_hyp = hyp.copy()
-batt_hyp['env'] = {'name': 'battery'}
+batt_hyp['env'] = {'name': 'battery', 'dataset': {'name': 'random-dataset'}, 'n_batteries': 2}
 
 
 def test_system_battery():

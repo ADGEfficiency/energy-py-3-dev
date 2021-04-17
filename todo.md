@@ -4,6 +4,13 @@ Can I start to split based on sampling v labelling v fitting?
 
 ---
 
+want to change the 'episode-reward' plot to just be a single line (don't separate test & train)
+
+want a way to restart easily from a checkpoint
+- automatically load latest
+
+---
+
 - json logging
 - {"thread":"main","level":"INFO","loggerName":"mainLogger","message":{"foo":"bar"},"endOfBatch":false,"loggerFqcn":"org.apache.logging.log4j.spi.AbstractLogger","instant":{"epochSecond":1548434758,"nanoOfSecond":572000000},"threadId":1,"threadPriority":5}"
 

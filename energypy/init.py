@@ -24,7 +24,8 @@ def init_writers(counters, paths):
     return {
         'random': utils.Writer('random', counters, paths['run']),
         'test': utils.Writer('test', counters, paths['run']),
-        'train': utils.Writer('train', counters, paths['run'])
+        'train': utils.Writer('train', counters, paths['run']),
+        'episodes': utils.Writer('episodes', counters, paths['run'])
     }
 
 
@@ -40,15 +41,14 @@ def init_optimizers(hyp):
 def init_fresh(hyp):
     counters = defaultdict(int)
     paths = utils.get_paths(hyp)
+    transition_logger = utils.make_logger('transitions.data', paths['run'])
 
-    env = registry.make(**hyp['env'])
+    env = registry.make(**hyp['env'], logger=transition_logger)
     buffer = memory.make(env, hyp)
 
     nets = init_nets(env, hyp)
     writers = init_writers(counters, paths)
     optimizers = init_optimizers(hyp)
-
-    transition_logger = utils.make_logger('transitions.data', paths['run'])
 
     target_entropy = nets.pop('target_entropy')
     hyp['target-entropy'] = target_entropy

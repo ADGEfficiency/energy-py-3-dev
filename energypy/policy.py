@@ -15,7 +15,7 @@ epsilon = 1e-6
 def make(env, hyp):
     size_scale = int(hyp['size-scale'])
 
-    obs = env.reset().reshape(1, -1)
+    obs = env.reset()
     obs_shape = obs.shape[1:]
     n_actions = np.zeros(env.action_space.shape).size
 

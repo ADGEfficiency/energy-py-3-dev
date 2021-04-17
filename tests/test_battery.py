@@ -40,7 +40,7 @@ def test_one_battery_charging(cfg, actions, expected_charges):
 
     results = defaultdict(list)
     for action in actions:
-        action = np.array(action).reshape(1, 1, 1)
+        action = np.array(action).reshape(1, 1)
         next_obs, reward, done, info = env.step(action)
         results['charge'].append(info['charge'])
 
@@ -84,19 +84,18 @@ def test_many_battery_step():
     )
 
     #  test 1
-    np.testing.assert_array_equal(cfgs['power'], env.power[0, :, 0])
-    assert env.power.shape == (1, len(test_cases), 1)
+    np.testing.assert_array_equal(cfgs['power'], env.power[0, 0])
+    assert env.power.shape == (len(test_cases), 1)
 
     obs = env.reset()
     results = defaultdict(list)
     for action in actions:
-        action = np.array(action).reshape(1, len(test_cases), 1)
+        action = np.array(action).reshape(len(test_cases), 1)
         next_obs, reward, done, info = env.step(action)
         print(env.charge, 'charge')
         results['charge'].append(info['charge'])
 
-        assert next_obs.shape == (1, len(test_cases), 10)
-        #assert done.shape == (1, len(test_cases), 1)
+        assert next_obs.shape == (len(test_cases), 10)
 
     assert done.all()
     np.testing.assert_array_almost_equal(

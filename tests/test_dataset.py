@@ -28,7 +28,6 @@ def test_make_random_dataset_many_battery():
             'name': 'random-dataset',
             'n': 1000,
             'n_features': 6,
-            'n_batteries': 4
         }
     )
 
@@ -53,19 +52,3 @@ def test_make_perfect_forecast():
         [90, 70, 40],
     ])
     np.testing.assert_array_equal(expected, forecast)
-
-
-def test_make_nem_dataset_one_battery():
-    #  TODO sync s3 with my clean data
-
-    dataset = make('nem-dataset')
-
-    #  check we get same / different data
-    stats = defaultdict(list)
-    for ep in range(16):
-        dataset.reset()
-        stats['avg-price'].append(np.mean(dataset.dataset['prices']))
-
-    assert all(np.mean(stats['avg-price']) != dataset.dataset['prices'])
-
-    #  check correct length

@@ -7,9 +7,7 @@ from energypy.datasets import *
 registry = {
     'lunar': GymWrapper,
     'pendulum': GymWrapper,
-
     'battery': Battery,
-
     'random-dataset': RandomDataset,
     'nem-dataset': NEMDataset,
 }

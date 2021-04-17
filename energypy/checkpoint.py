@@ -10,6 +10,7 @@ from energypy import json_util, memory, registry
 
 from energypy.init import init_nets, init_optimizers
 
+
 def save(
     hyp,
     nets,
@@ -56,12 +57,14 @@ def save(
     )
 
 
-def load(run):
+def get_checkpoint_paths(run):
     checkpoints = Path(run) / 'checkpoints'
-    checkpoints = [
-        load_checkpoint(p) for p in checkpoints.iterdir() if p.is_dir()
-    ]
-    return checkpoints
+    return [p for p in checkpoints.iterdir() if p.is_dir()]
+
+
+def load(run):
+    checkpoints = get_checkpoint_paths(run)
+    return [load_checkpoint(p) for p in checkpoints]
 
 
 def load_checkpoint(path):

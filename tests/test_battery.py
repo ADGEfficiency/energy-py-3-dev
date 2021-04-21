@@ -16,19 +16,19 @@ test_cases = (
     (
         {'initial_charge': 0.0, 'power': 2.0, 'capacity': 100, 'episode_length': 3},
         [1.0, 1.0, 1.0],
-        [2.0/12, 4.0/12, 6.0/12]
+        [2.0/2, 4.0/2, 6.0/2]
     ),
     #  full, half then full charge for three steps
     (
         {'initial_charge': 0.0, 'power': 2.0, 'capacity': 100, 'episode_length': 3},
         [1.0, 0.5, 1.0],
-        [2.0/12, 3.0/12, 5.0/12]
+        [2.0/2, 3.0/2, 5.0/2]
     ),
     (
     #   discharge, charge, discharge
         {'initial_charge': 0.0, 'power': 2.0, 'capacity': 100, 'episode_length': 3},
         [-1.0, 1.0, -1.0],
-        [0.0, 2.0/12, 0.0]
+        [0.0, 2.0/2, 0.0]
     )
 )
 

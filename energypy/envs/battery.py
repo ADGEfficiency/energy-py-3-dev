@@ -27,15 +27,19 @@ def calculate_losses(delta_charge, efficiency):
 
 
 def set_battery_config(value, n_batteries):
-    if isinstance(value, list):
+    if isinstance(value, str):
+        return value
+    elif isinstance(value, list):
         return np.array(value).reshape(n_batteries, 1)
     else:
         return np.full((n_batteries, 1), value).reshape(n_batteries, 1)
 
 
 class BatteryObservationSpace:
-    def __init__(self, dataset):
-        self.shape = dataset.dataset['features'].shape[2:]
+    def __init__(self, dataset, additional_features):
+        shape = list(dataset.dataset['features'].shape[2:])
+        shape[0] += additional_features
+        self.shape = tuple(shape)
 
 
 class BatteryActionSpace:
@@ -88,7 +92,7 @@ class Battery(AbstractEnv):
         else:
             self.dataset = dataset
 
-        self.observation_space = BatteryObservationSpace(self.dataset)
+        self.observation_space = BatteryObservationSpace(self.dataset, additional_features=1)
         self.action_space = BatteryActionSpace(n_batteries)
 
         self.elements = (
@@ -101,14 +105,25 @@ class Battery(AbstractEnv):
         self.Transition = namedtuple('Transition', [el[0] for el in self.elements])
 
     def reset(self, mode='train'):
-        len_dataset = 1000
         self.cursor = 0
-        self.charge = self.initial_charge
+        self.charge = self.get_initial_charge()
 
         self.dataset.reset(mode)
         self.test_done = self.dataset.test_done
+        return self.get_observation()
+
+    def get_initial_charge(self):
+        #  instance check to avoid a warning that occurs when initial_charge is an array
+        if isinstance(self.initial_charge, str) and self.initial_charge == "random":
+            initial = np.random.uniform(0, self.capacity[0], self.n_batteries)
+        else:
+            initial =  self.initial_charge
+        return initial.reshape(self.n_batteries, 1)
+
+    def get_observation(self):
         data = self.dataset.get_data(self.cursor)
-        return data['features'].reshape(self.n_batteries,  -1)
+        features = data['features'].reshape(self.n_batteries, -1)
+        return np.concatenate([features, self.charge], axis=1)
 
     def setup_test(self):
         self.test_done = self.dataset.setup_test()
@@ -122,9 +137,9 @@ class Battery(AbstractEnv):
         action = action * self.power
 
         #  convert from power to energy, kW -> kWh
-        action = action / 12
+        action = action / 2
 
-        #  charge at the start of the 5 min interval, kWh
+        #  charge at the start of the interval, kWh
         initial_charge = self.charge
 
         #  charge at end of the interval
@@ -152,13 +167,8 @@ class Battery(AbstractEnv):
         #  set charge for next timestep
         self.charge = initial_charge + delta_charge
 
-        battery_energy_balance(
-            initial_charge,
-            final_charge,
-            import_energy,
-            export_energy,
-            losses
-        )
+        #  check battery is working correctly
+        battery_energy_balance(initial_charge, final_charge, import_energy, export_energy, losses)
 
         price = self.dataset.get_data(self.cursor)['prices'].reshape(self.n_batteries,  -1)
         price = np.array(price).reshape(self.n_batteries, 1)
@@ -166,7 +176,8 @@ class Battery(AbstractEnv):
 
         self.cursor += 1
         done = np.array(self.cursor == (self.episode_length))
-        next_obs = self.dataset.get_data(self.cursor)['features'].reshape(self.n_batteries,  -1)
+
+        next_obs = self.get_observation()
 
         info = {
             'cursor': self.cursor,
@@ -176,3 +187,14 @@ class Battery(AbstractEnv):
         }
 
         return next_obs, reward, done, info
+
+
+if __name__ == '__main__':
+
+    env = Battery()
+
+    obs = env.reset()
+
+    for _ in range(2):
+        act = env.action_space.sample()
+        next_obs, reward, done, info = env.step(act)

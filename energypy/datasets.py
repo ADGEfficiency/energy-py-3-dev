@@ -74,16 +74,21 @@ class NEMDataset(AbstractDataset):
 
         #  TODO - use of the random key here is awkard
         #  using it to get the random policy sampling to play nice
+
+        train_episodes = load_episodes(train_episodes)
         self.episodes = {
-            'train': load_episodes(train_episodes),
-            'random': load_episodes(train_episodes),
+            'train': train_episodes,
+            'random': train_episodes,
             'test': load_episodes(test_episodes),
         }
 
         #  want test episodes to be a multiple of the number of batteries
+        episodes_before = len(self.episodes['test'])
         lim = round_nearest(len(self.episodes['test'][:]), self.n_batteries)
         self.episodes['test'] = self.episodes['test'][:lim]
         assert len(self.episodes['test']) % self.n_batteries == 0
+        episodes_after = len(self.episodes['test'])
+        print(f'lost {episodes_before - episodes_after} test episodes due to even multiple')
 
         self.test_done = True
         self.reset()
@@ -101,13 +106,13 @@ class NEMDataset(AbstractDataset):
         for episode in episodes:
             episode = episode.copy()
             prices = episode.pop('price [$/MWh]')
-            ds['prices'].append(prices.reset_index(drop=True))
-            ds['features'].append(episode.reset_index(drop=True))
+            ds['prices'].append(prices.reset_index(drop=True).values.reshape(-1, 1, 1))
+            ds['features'].append(episode.reset_index(drop=True).values.reshape(prices.shape[0], 1, -1))
 
         #  TODO could call this episode
         self.dataset = {
-            'prices': pd.concat(ds['prices'], axis=1).values,
-            'features': pd.concat(ds['features'], axis=1).values,
+            'prices': np.concatenate(ds['prices'], axis=1),
+            'features': np.concatenate(ds['features'], axis=1),
         }
         return self.get_data(0)
 

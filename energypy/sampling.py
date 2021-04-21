@@ -17,7 +17,9 @@ def episode(
     done = False
 
     reward_scale = hyp['reward-scale']
-    episode_rewards = []
+
+    #  create one list per parallel episode we are running
+    episode_rewards = [list() for _ in range(obs.shape[0])]
 
     while not done:
         act, _, deterministic_action = actor(obs)
@@ -26,23 +28,23 @@ def episode(
             act = deterministic_action
 
         next_obs, reward, done, _ = env.step(np.array(act))
-        episode_rewards.append(np.mean(reward))
 
-        for o, a, r, no in zip(obs, act, reward, next_obs):
+        for i, (o, a, r, no) in enumerate(zip(obs, act, reward, next_obs)):
             buffer.append(env.Transition(o, a, r/reward_scale, no, done))
+            episode_rewards[i].append(r)
 
-        # if logger:
-        #     logger.debug(
-        #         f'{obs}, {act}, {reward}, {next_obs}, {done}, {mode}'
-        #     )
+        if logger:
+            logger.debug(
+                f'{obs}, {act}, {reward}, {next_obs}, {done}, {mode}'
+            )
 
         counters['env-steps'] += 1
         obs = next_obs
 
-    counters['episodes'] += 1
-    counters[f'{mode}-episodes'] += 1
-
-    return episode_rewards
+    #  shape = (n_batteries, episode_len)
+    episode_rewards = np.squeeze(np.array(episode_rewards), axis=2)
+    #  shape = (n_batteries, )
+    return episode_rewards.sum(axis=1)
 
 
 def run_episode(
@@ -66,22 +68,28 @@ def run_episode(
         mode,
         logger=logger
     )
-    episode_reward = float(np.sum(episode_rewards))
 
-    rewards['episode-reward'].append(episode_reward)
-    rewards[f'{mode}-reward'].append(episode_reward)
+    for episode_reward in episode_rewards:
+        episode_reward = float(episode_reward)
 
-    writers[mode].scalar(
-        episode_reward,
-        f'{mode}-episode-reward',
-        f'{mode}-episodes',
-        verbose=True
-    )
-    writers['episodes'].scalar(
-        episode_reward,
-        'episode-reward',
-        'episodes'
-    )
+        rewards['episode-reward'].append(episode_reward)
+        rewards[f'{mode}-reward'].append(episode_reward)
+
+        writers[mode].scalar(
+            episode_reward,
+            f'{mode}-episode-reward',
+            f'{mode}-episodes',
+            verbose=True
+        )
+        writers['episodes'].scalar(
+            episode_reward,
+            'episode-reward',
+            'episodes'
+        )
+
+        counters['episodes'] += 1
+        counters[f'{mode}-episodes'] += 1
+
     return episode_rewards
 
 

@@ -4,10 +4,29 @@ Can I start to split based on sampling v labelling v fitting?
 
 ---
 
-want to change the 'episode-reward' plot to just be a single line (don't separate test & train)
-
 want a way to restart easily from a checkpoint
 - automatically load latest
+- tests for loading checkpoints
+
+should just fill buffer if you can't find it
+
+5 min versus 30 min
+- should read from interval data
+
+want to include env run time in counters
+
+save stuff in checkpoint so that we can figure out how long this specific checkpoint was
+
+include dataset creation hyper parameters in hyp.json
+
+
+
+---
+
+lessons
+- random inital charge to get more behaviour
+- reward scale very important
+
 
 ---
 
@@ -21,12 +40,6 @@ from sac import make
 sac.make
 
 ---
-
-TODO
-- test / train nem data episodes
-- generate pretrained dataset energypylinear (use nem-data dataset as well)
-- use dataset for pretraining
-- tests for loading checkpoints
 
 tool to analyze data  / logs
 - import / export, reward

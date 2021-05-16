@@ -1,3 +1,22 @@
+Where to parallelize:
+- entire experiment first (ie search over hyperparams)
+- within experiment for later
+
+Where in the code to parallelize:
+
+- maybe nice to have an entrypoints bit?
+
+```
+energypy.parallelize([hyp1, hyp2])
+```
+
+---
+
+last 100 train / test / random rewards
+
+---
+
+
 Can I start to split based on sampling v labelling v fitting?
 - test & fill buffer should be one function
 - what things read & save to disk

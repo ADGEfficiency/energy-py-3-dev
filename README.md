@@ -1,10 +1,4 @@
-# Soft Actor-Critic 
-
-<center>
-<img src="/assets/lunar.gif" width="50%"></a>
-</center>
-
-Reimplementation of the 2018 paper Soft Actor Critic - an off-policy, continuous actor-critic reinforcement learning algorithm, with:
+# energy-py
 
 - implementation in Tensorflow 2.0
 - test episodes
@@ -16,16 +10,19 @@ Reimplementation of the 2018 paper Soft Actor Critic - an off-policy, continuous
 ## Setup
 
 ```bash
-$ brew install swig
-$ make setup
+make setup
 ```
 
-If you are running Big Sur, you may have issues with `pyglet` - [see here](https://github.com/openai/gym/issues/2101).
 
+## Train an agent from the shell
 
-## Train
+```bash
+$ energypy benchmarks/battery.json
+```
+
 
 `Pendulum-v0` - [source](https://github.com/openai/gym/blob/master/gym/envs/classic_control/pendulum.py)
+`LunarLanderContinuous-v2` - [source](https://github.com/openai/gym/blob/master/gym/envs/box2d/lunar_lander.py)
 
 ```bash
 $ sac benchmarks/pendulum.json
@@ -33,7 +30,6 @@ $ sac benchmarks/pendulum.json
 
 ![](assets/pendulum.png)
 
-`LunarLanderContinuous-v2` - [source](https://github.com/openai/gym/blob/master/gym/envs/box2d/lunar_lander.py)
 
 ```bash
 $ sac benchmarks/lunar.json
@@ -41,12 +37,11 @@ $ sac benchmarks/lunar.json
 
 ![](assets/lunar.png)
 
-Notes
-- if you enter the same run name via `-n`, program will ask if you want to delete
-- if no run name entered, new run will be created at `run-n`, where `n` = last run number + 1
 
 
-## Play
+## Play gym environments
+
+$ energypy benchmarks/lunar.json
 
 Will load the best actor checkpoint based on average test rollouts rewards:
 

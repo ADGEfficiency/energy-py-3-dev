@@ -1,5 +1,6 @@
 from collections import defaultdict
 import random
+from random import choice
 from time import sleep
 import time
 
@@ -26,10 +27,8 @@ def main(
     rewards
 ):
     if 'seed' not in hyp.keys():
-        from random import choice
-        seed = choice(range(int(1e4)))
+        hyp['seed'] = choice(range(int(1e4)))
 
-    hyp['seed'] = seed
     utils.set_seeds(hyp['seed'])
 
     json_util.save(hyp, paths['run'] / 'hyperparameters.json')

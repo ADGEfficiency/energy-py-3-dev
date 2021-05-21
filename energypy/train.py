@@ -59,9 +59,4 @@ def train(
         writer
     )
     counters['alpha-update-seconds'] = utils.now() - st
-
     counters['train-steps'] += 1
-
-
-
-

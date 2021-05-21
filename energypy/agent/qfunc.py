@@ -1,10 +1,9 @@
-import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.layers import Flatten
 
-from energypy.target import update_target_network
+from energypy.agent.target import update_target_network
 from energypy.utils import minimum_target
 
 

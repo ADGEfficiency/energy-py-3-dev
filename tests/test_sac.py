@@ -3,11 +3,10 @@ from collections import namedtuple
 import numpy as np
 from numpy.testing import assert_array_equal
 
-from energypy.memory import Buffer
+from energypy.agent.memory import Buffer
+from energypy.agent.random_policy import make as make_random_policy
+from energypy.agent.qfunc import make_qfunc, update_target_network
 from energypy.envs.gym_wrappers import GymWrapper
-from energypy.random_policy import make as make_random_policy
-from energypy.qfunc import make_qfunc
-from energypy.qfunc import update_target_network
 
 
 def test_buffer():

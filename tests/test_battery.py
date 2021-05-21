@@ -94,8 +94,8 @@ def test_many_battery_step():
         next_obs, reward, done, info = env.step(action)
         print(env.charge, 'charge')
         results['charge'].append(info['charge'])
-
-        assert next_obs.shape == (len(test_cases), 10)
+        #  1 for the charge variable added onto our 10 features
+        assert next_obs.shape == (len(test_cases), 10+1)
 
     assert done.all()
     np.testing.assert_array_almost_equal(

@@ -1,36 +1,29 @@
-Where to parallelize:
-- entire experiment first (ie search over hyperparams)
-- within experiment for later
+## Parallelize entire experiment first (ie search over hyperparams)
 
-Where in the code to parallelize:
-
-- maybe nice to have an entrypoints bit?
-
-```
-energypy.parallelize([hyp1, hyp2])
-```
-
----
-
-last 100 train / test / random rewards
-
----
-
+## Parallelize within expt:
 
 Can I start to split based on sampling v labelling v fitting?
 - test & fill buffer should be one function
 - what things read & save to disk
 
+energypy.make('sac', n_cpu={'sampling': 2, 'labelling': 2}, n_gpu={'fitting': 1})
+
 ---
+
+last 100 train / test / random rewards
+
+
+---
+
+should just fill buffer if you can't find it
+
+5 min versus 30 min
+- should be set in hyperparams
 
 want a way to restart easily from a checkpoint
 - automatically load latest
 - tests for loading checkpoints
 
-should just fill buffer if you can't find it
-
-5 min versus 30 min
-- should read from interval data
 
 want to include env run time in counters
 
@@ -38,14 +31,12 @@ save stuff in checkpoint so that we can figure out how long this specific checkp
 
 include dataset creation hyper parameters in hyp.json
 
-
-
 ---
 
 lessons
 - random inital charge to get more behaviour
 - reward scale very important
-
+- filling in the prices that ocuur next period with a large negative number
 
 ---
 
@@ -54,9 +45,6 @@ lessons
 
 nem test / train data
 - work started in tests/test_nem_dataset.py
-
-from sac import make
-sac.make
 
 ---
 

@@ -30,11 +30,14 @@ def init_writers(counters, paths):
 
 
 def init_optimizers(hyp):
+    lr = hyp['lr']
+    lr_alpha = hyp.get('lr-alpha', lr)
+
     return {
-        'online-1': tf.keras.optimizers.Adam(learning_rate=hyp['lr']),
-        'online-2': tf.keras.optimizers.Adam(learning_rate=hyp['lr']),
-        'actor': tf.keras.optimizers.Adam(learning_rate=hyp['lr']),
-        'alpha': tf.keras.optimizers.Adam(learning_rate=hyp['lr']),
+        'online-1': tf.keras.optimizers.Adam(learning_rate=lr),
+        'online-2': tf.keras.optimizers.Adam(learning_rate=lr),
+        'actor': tf.keras.optimizers.Adam(learning_rate=lr),
+        'alpha': tf.keras.optimizers.Adam(learning_rate=lr_alpha),
     }
 
 

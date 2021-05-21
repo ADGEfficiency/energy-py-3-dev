@@ -8,12 +8,17 @@ def make(env, hyp):
     buffer_path = hyp.get('buffer')
 
     if (buffer_path == 'new') or (buffer_path is None):
+        print(f' init buffer')
         return Buffer(env.elements, size=hyp['buffer-size'])
 
-    else:
+    try:
         buffer = load(buffer_path)
         assert buffer.full
         return buffer
+
+    except FileNotFoundError:
+        print(f' failed to load {buffer_path}, init buffer')
+        return Buffer(env.elements, size=hyp['buffer-size'])
 
 
 def save(buffer, path):

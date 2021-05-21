@@ -6,7 +6,8 @@ import tensorflow as tf
 
 import numpy as np
 
-from energypy import json_util, memory, registry
+from energypy import json_util, registry
+from energypy.agent import memory
 
 from energypy.init import init_nets, init_optimizers
 
@@ -88,7 +89,12 @@ def load_checkpoint(path, full=True):
     }
 
     if full:
-        buffer = memory.load(path / 'buffer.pkl')
+        #  catch a wierd error when we load old buffers
+        try:
+            buffer = memory.load(path / 'buffer.pkl')
+        except ModuleNotFoundError:
+            print('failed to load buffer due to ModuleNotFoundError')
+            buffer = None
 
         env = registry.make(**hyp['env'])
         nets = init_nets(env, hyp)

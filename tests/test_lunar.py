@@ -1,5 +1,5 @@
+from energypy.agent.random_policy import make as make_random_policy
 from energypy.envs.gym_wrappers import GymWrapper
-from energypy.random_policy import make as make_random_policy
 
 
 def test_envs():

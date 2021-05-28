@@ -9,13 +9,17 @@ Can I start to split based on sampling v labelling v fitting?
 energypy.make('sac', n_cpu={'sampling': 2, 'labelling': 2}, n_gpu={'fitting': 1})
 
 ---
+want to include env run time in counters
+- want to log this once a cycle
 
-last 100 train / test / random rewards
-
+stuff shared globally
+- rewards, counters
 
 ---
 
-should just fill buffer if you can't find it
+why cant it be env.reset('test')
+
+---
 
 5 min versus 30 min
 - should be set in hyperparams
@@ -24,8 +28,6 @@ want a way to restart easily from a checkpoint
 - automatically load latest
 - tests for loading checkpoints
 
-
-want to include env run time in counters
 
 save stuff in checkpoint so that we can figure out how long this specific checkpoint was
 

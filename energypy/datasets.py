@@ -1,9 +1,10 @@
-from collections import OrderedDict, defaultdict, namedtuple
+from collections import OrderedDict, defaultdict
 import json
 
 from pathlib import Path
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 import random
 
 
@@ -17,8 +18,10 @@ def load_episodes(path):
     #  pass in list of filepaths
     if isinstance(path, list):
         episodes = path
+        print(f'loading {len(episodes)} from list')
+        eps = [pd.read_csv(p, index_col=0) for p in tqdm(episodes)]
         print(f'loaded {len(episodes)} from list')
-        return [pd.read_csv(p, index_col=0) for p in episodes]
+        return eps
 
     #  pass in directory
     elif Path(path).is_dir():
@@ -29,8 +32,10 @@ def load_episodes(path):
         assert path.is_file() and path.suffix == '.csv'
         episodes = [path, ]
 
+    print(f'loading {len(episodes)} from {path.name}')
+    eps = [pd.read_csv(p, index_col=0) for p in tqdm(episodes)]
     print(f'loaded {len(episodes)} from {path.name}')
-    return [pd.read_csv(p, index_col=0) for p in episodes]
+    return eps
 
 
 def round_nearest(x, divisor):

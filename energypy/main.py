@@ -72,12 +72,6 @@ def main(
                 paths=paths
             )
 
-        writers['train'].scalar(
-            utils.last_100_episode_rewards(rewards['episode-reward']),
-            'last-100-episode-rewards',
-            'episodes'
-        )
-
         train_rewards = sample_train(
             env,
             buffer,
@@ -89,14 +83,12 @@ def main(
             transition_logger
         )
 
-        #  len(train_rewards) == num ep
         train_steps = len(train_rewards) * hyp.get('episode_length', 48)
 
         print(f'training \n step {counters["train-steps"]:6.0f}, {train_steps} steps')
         for _ in tqdm(range(train_steps)):
-            batch = buffer.sample(hyp['batch-size'])
             train(
-                batch,
+                buffer.sample(hyp['batch-size']),
                 nets['actor'],
                 [nets['online-1'], nets['online-2']],
                 [nets['target-1'], nets['target-2']],
@@ -106,6 +98,7 @@ def main(
                 counters,
                 hyp
             )
+        utils.print_counters(counters)
 
     if counters['train-episodes'] % hyp['test-every'] == 0:
         test_rewards = sample_test(

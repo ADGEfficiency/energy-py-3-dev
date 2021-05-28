@@ -102,6 +102,14 @@ def make_logger(log_file, home):
     return logger
 
 
+def stats(name, counter, counters, value):
+    print(f'{name} - {counter} \n {len(value)}, {counters[counter]:6.0f}, mu {np.mean(value):5.1f}, sig {np.std(value):5.1f}')
+
+
+def print_counters(counters):
+    print(f'train: {counters["train-seconds"]} sec, sample: {counters["sample-seconds"]} sec')
+
+
 class Writer:
     def __init__(self, name, counters, home):
         path = home / 'tensorboard' / name
@@ -116,4 +124,4 @@ class Writer:
             tf.summary.scalar(name, np.mean(value), step=step)
 
         if verbose:
-            print(f'{name} \n {counter} \n {self.counters[counter]:6.0f}, mu {np.mean(value):5.1f}, sig {np.std(value):5.1f}')
+            stats(name, counter, self.counters, value)

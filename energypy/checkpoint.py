@@ -69,12 +69,17 @@ def load(run, full=False):
     return [load_checkpoint(p, full) for p in checkpoints]
 
 
+def load_hyp(path):
+    return json_util.load(path / 'hyperparameters.json')
+
+
 def load_checkpoint(path, full=True):
     """full mode loads everything, other mode loads only rewards & counters
     idea is to have a way to quickly evaluate checkpoints without loading what we don't need"""
 
     path = Path(path)
-    hyp = json_util.load(path / 'hyperparameters.json')
+
+    hyp = load_hyp(path)
 
     rewards = json_util.load(path / 'rewards.json')
     rewards.pop('time')
@@ -129,7 +134,7 @@ def load_checkpoint(path, full=True):
                 with opt_path.open('rb') as fi:
                     opt.set_weights(pickle.load(fi))
 
-        results['env'] = env,
+        results['env'] = env
         results['nets'] = nets
         results['optimizers'] = optimizers
         results['buffer'] = buffer

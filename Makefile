@@ -5,6 +5,9 @@ setup:
 	pip install .
 
 test:
+	pytest tests -m "not pybox2d" --tb=line --disable-pytest-warnings
+
+test-with-pybox2d:
 	pytest tests --tb=line --disable-pytest-warnings
 
 tensorboard:

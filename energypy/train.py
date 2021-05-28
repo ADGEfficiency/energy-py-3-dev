@@ -24,7 +24,7 @@ def train(
         counters,
         hyp
     )
-    counters['q-func-update-seconds'] = utils.now() - st
+    counters['q-func-update-seconds'] += utils.now() - st
 
     st = utils.now()
     policy.update(
@@ -37,7 +37,7 @@ def train(
         optimizers['actor'],
         counters
     )
-    counters['pol-func-update-seconds'] = utils.now() - st
+    counters['pol-func-update-seconds'] += utils.now() - st
 
     st = utils.now()
     target.update(
@@ -46,7 +46,7 @@ def train(
         hyp,
         counters
     )
-    counters['target-update-seconds'] = utils.now() - st
+    counters['target-update-seconds'] += utils.now() - st
 
     st = utils.now()
     alpha.update(
@@ -58,5 +58,6 @@ def train(
         counters,
         writer
     )
-    counters['alpha-update-seconds'] = utils.now() - st
+    counters['alpha-update-seconds'] += utils.now() - st
+    counters['train-seconds'] += utils.now() - st
     counters['train-steps'] += 1

@@ -24,6 +24,13 @@ hyp = {
     'buffer': 'new'
 }
 
+batt_hyp = hyp.copy()
+batt_hyp['env'] = {
+    'name': 'battery',
+    'dataset': {'name': 'random-dataset'},
+    'n_batteries': 2
+}
+
 
 def test_system():
     main(**init_fresh(hyp))
@@ -31,10 +38,6 @@ def test_system():
     print(f'deleting {run_path}\n')
     rmtree(str(run_path))
     return run_path
-
-
-batt_hyp = hyp.copy()
-batt_hyp['env'] = {'name': 'battery', 'dataset': {'name': 'random-dataset'}, 'n_batteries': 2}
 
 
 def test_system_battery():

@@ -1,7 +1,8 @@
+from energypy.agent import random_policy
+from energypy.agent.memory import Buffer
+from energypy.datasets import *
 from energypy.envs.battery import Battery
 from energypy.envs.gym_wrappers import GymWrapper
-
-from energypy.datasets import *
 
 
 registry = {
@@ -9,7 +10,9 @@ registry = {
     'pendulum': GymWrapper,
     'battery': Battery,
     'random-dataset': RandomDataset,
+    'random-policy': random_policy.make,
     'nem-dataset': NEMDataset,
+    'buffer': Buffer,
 }
 
 

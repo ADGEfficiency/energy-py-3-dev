@@ -17,14 +17,19 @@ def make_perfect_forecast(prices, horizon):
 def load_episodes(path):
     #  pass in list of filepaths
     if isinstance(path, list):
-        episodes = path
-        print(f'loading {len(episodes)} from list')
-        eps = [pd.read_csv(p, index_col=0) for p in tqdm(episodes)]
-        print(f'loaded {len(episodes)} from list')
-        return eps
+        if isinstance(path[0], pd.DataFrame):
+            #  list of dataframes?
+            return path
+        else:
+            #  list of paths
+            episodes = path
+            print(f'loading {len(episodes)} from list')
+            eps = [pd.read_csv(p, index_col=0) for p in tqdm(episodes)]
+            print(f'loaded {len(episodes)} from list')
+            return eps
 
     #  pass in directory
-    elif Path(path).is_dir():
+    elif Path(path).is_dir() or isinstance(path, str):
         path = Path(path)
         episodes = [p for p in path.iterdir() if p.suffix == '.csv']
     else:
@@ -105,7 +110,7 @@ class NEMDataset(AbstractDataset):
             return self.reset_train()
 
     def reset_train(self):
-        episodes = random.choices(self.episodes['train'], k=self.n_batteries)
+        episodes = random.sample(self.episodes['train'], self.n_batteries)
 
         ds = defaultdict(list)
         for episode in episodes:

@@ -21,6 +21,13 @@ why cant it be env.reset('test')
 
 ---
 
+want to store env info
+- attempted action, actual action
+
+
+
+---
+
 5 min versus 30 min
 - should be set in hyperparams
 
